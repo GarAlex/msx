@@ -1,0 +1,209 @@
+;
+; File : BDOS.MAC
+;
+; System functions & area definitions
+;
+;   (C) 1987 by Kim Rado
+;
+;  Produced by  Kim Rado
+;  Last correction  3-Nov-1987  16:53
+;
+;
+;
+;
+
+WBOOT	EQU	0000h	; Warm Boot entry
+BDOS	EQU	0005h	; Base Disk Operating System
+
+.fcb0	EQU	005Ch	; Internal FCB
+.fcb1	EQU	006Ch	; Internal FCB
+
+.DMA	EQU	0080h	; Internal DMA
+
+COMLEN	EQU	0080h	; Length of command line
+COMLIN	EQU	0081h	; Command line
+
+.TPA	EQU	0100h	; Transit Program Area
+
+;
+; System functions symbolic definitions
+;
+RESTRT	EQU	00h	; System restart
+CONIN	EQU	01h	; Console input
+CONOUT	EQU	02h	; Console output
+AUXIN	EQU	03h	; Additive unit input
+AUXOUT	EQU	04h	; Additive unit output
+LSTOUT	EQU	05h	; Printer output
+DIRCON	EQU	06h	; Direct console i/o
+GETCH	EQU	07h	; Input without check-up
+PUTCH	EQU	08h	; Output without check-up
+OUTLIN	EQU	09h	; Line output
+INLIN	EQU	0Ah	; Line input
+CONST	EQU	0Bh	; Console status
+GETVNO	EQU	0Ch	; Get version number
+NORMAL	EQU	0Dh	; Normalisation
+SELDRV	EQU	0Eh	; Select drive
+OPEN	EQU	0Fh	; Open file
+CLOSE	EQU	10h	; Close file
+SEARF	EQU	11h	; Search first entry
+SEARN	EQU	12h	; Search next entry
+ERASE	EQU	13h	; Erase file
+GETSQ	EQU	14h	; Get record sequential
+PUTSQ	EQU	15h	; Put record sequential
+CREATE	EQU	16h	; Create file
+RENAME	EQU	17h	; Rename file
+GETDVC	EQU	18h	; Get drives allocation vector
+GETDRV	EQU	19h	; Get current drive
+SETDMA	EQU	1Ah	; Set DMA address
+GETDPR	EQU	1Bh	; Get drive parameters
+Free01	EQU	1Ch	;
+Free02	EQU	1Dh	;
+Free03	EQU	1Eh	;
+Free04	EQU	1Fh	;
+Free05	EQU	20h	;
+GETRN	EQU	21h	; Get record random
+PUTRN	EQU	22h	; Put record random
+FILSIZ	EQU	23h	; Get file size
+SETPOS	EQU	24h	; Set position for random i/o
+Free06	EQU	25h	;
+WRITE	EQU	26h	; Write block direct
+READ	EQU	27h	; Read block direct
+PUTRNZ	EQU	28h	; Put record random with zero fill
+Free07	EQU	29h	;
+GETDAT	EQU	2Ah	; Get current date
+SETDAT	EQU	2Bh	; Set date
+GETTIM	EQU	2Ch	; Get current time
+SETTIM	EQU	2Dh	; Set time
+SETVFY	EQU	2Eh	; Set verify mode
+GETSEC	EQU	2Fh	; Get sector
+PUTSEC	EQU	30h	; Put sector
+
+;
+; Control codes definitions
+;
+
+NUL	EQU	00h	; @
+SOH	EQU	01h	; A
+STX	EQU	02h	; B
+ETX	EQU	03h	; C
+EOT	EQU	04h	; D
+ENQ	EQU	05h	; E
+ACK	EQU	06h	; F
+BEL	EQU	07h	; G
+BS	EQU	08h	; <BS>
+TAB	EQU	09h	; <TAB>
+LF	EQU	0Ah	; J
+HOME	EQU	0Bh	; <HOME>
+CLS	EQU	0Ch	; <CLS>
+CR	EQU	0Dh	; <CR>
+SO	EQU	0Eh	; N
+SI	EQU	0Fh	; O
+DLE	EQU	10h	; P
+DC1	EQU	11h	; Q
+DC2	EQU	12h	; <INS>
+DC3	EQU	13h	; S
+DC4	EQU	14h	; T
+NAK	EQU	15h	; U
+SYN	EQU	16h	; V
+ETB	EQU	17h	; W
+CAN	EQU	18h	; <SELECT>
+EM	EQU	19h	; Y
+SUB	EQU	1Ah	; Z
+ESC	EQU	1Bh	; <ESC>
+RC	EQU	1Ch	; è
+LC	EQU	1Dh	; ê
+UC	EQU	1Eh	; é
+DC	EQU	1Fh	; ç
+
+DEL	EQU	7Fh	; <DEL>
+
+;
+; FCB fields symbolic definitions
+;
+DRIVE	EQU	 0	; 0 - current, 1 - A, ...
+FILNAM	EQU	 1	; File name
+BLKNO	EQU	12	; Current block number
+LRECL	EQU	14	; Record length
+FILESZ	EQU	16	; File size
+DAT	EQU	20	; Date
+TIM	EQU	22	; Time
+FCS0	EQU	24
+FCS1	EQU	25
+FCS2	EQU	26
+FCS3	EQU	28
+FCS4	EQU	30
+SRECNO	EQU	32	; Record number ( sequential access )
+RRECNO	EQU	33	; Record number ( direct access )
+
+;
+
+.BDOS	MACRO	@Code,@Errc,@Errh
+	IFNB	<@Code>
+	 LD	 C,@Code
+	ENDC
+	 CALL	 BDOS
+	IFNB	<@Errh>
+	IFNB	<@Errc>
+	 CP	 @Errc
+	ELSE
+	 CP	 0FFh
+	ENDC
+	 JP	 Z,@Errh
+	ENDC
+	ENDM	.BDOS
+
+BDOS	MACRO	@Code,@Errc,@Errh
+	 .BDOS   @Code,@Errc,@Errh
+	ENDM	BDOS
+
+.FCB	MACRO	@Drive,@Name,@Ext,@LRECL
+	 DB	 @Drive,@Name,@Ext
+	 DS	 2
+	 DW	 @LRECL
+	 DS	 4+2+2+1+1+2+2+2+1+4
+	ENDM	.FCB
+
+ITEM	MACRO	@Byte,@Word
+	 DB	 @Byte
+	 DW	 @Word
+	ENDM	ITEM
+
+.BIOS	MACRO	@Slot,@Addr
+	 RST	 30h
+	 DB	 @Slot
+	 DW	 @Addr
+	ENDM	.BIOS
+
+.EXIT	MACRO
+	 JP	 WBOOT		; Jump to Warm Boot
+	ENDM
+
+EXIT	MACRO
+	 .EXIT
+	ENDM	EXIT
+
+.ROUND	MACRO	@Rel,@Rnd,@Off
+	 DS	 ( ( $ - @Rel ) + @Rnd - 1 ) / @Rnd * @Rnd + @Off
+	ENDM	.ROUND
+
+.LB	MACRO	@Dst,@Src	; Load byte
+	 LD	 A,(@Src)
+	 LD	 (@Dst),A
+	ENDM	.MB
+
+.SB	MACRO	@Src,@Dst	; Store byte
+	 .LB	 @Dst,@Src
+	ENDM	.SB
+
+.LW	MACRO	@Dst,@Src	; Load word
+	 LD	 HL,(@Src)
+	 LD	 (@Dst),HL
+	ENDM	.MW
+
+.SW	MACRO	@Src,@Dst	; Store word
+	 .LW	 @Dst,@Src
+	ENDM	.SW
+
+;
+
+

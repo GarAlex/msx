@@ -1,0 +1,712 @@
+	.z80
+
+L152E:	
+	DB	0Dh,0Ah,'Insert disk with batch file'
+	DB	0Dh,0Ah,'and strike any key when ready $'
+
+L156C: 	DB	'#:$'
+QU?:	DB	' ?$'
+L1585: 	DB	'Bad drive name$'
+L15BA: 	DB	'Program too big to fit in memory$'
+L15DB: 	DB	' < DIR >$'
+PRO:	DB	' < PRO >$'
+SETRM:	DB	' RAM  ( max 4 ) = $'
+SETRV:	DB	' VRAM ( max 7 ) = $'
+L15E4: 	DB	' file$'
+L15EA: 	DB	' bytes free$'
+USED:   DB	' bytes used$'
+L15F6: 	DB	'Files not found$'
+L161A: 	DB	'Rename error$'
+L1627: 	DB	'Invalid parameter$'
+L1639: 	DB	'File cannot be copied onto itself$'
+L165B: 	DB	'Content of destination lost before copy',0DH,0AH,'$'
+L1685: 	DB	'File creation error$'
+PRNOT:  DB	'Printer not ready$'
+L1699: 	DB	'Write error$'
+L16A5: 	DB	'Disk full$'
+L16BD: 	DB	' copied$'
+
+L16C5:	
+	DB	'Current date is $'
+L16D6:	
+	DB	'Invalid date$'
+L16E3:	
+	DB	0DH,0AH,'Enter new date: $'
+L16F6:	
+	DB	'Current time is $'
+L1707:	
+	DB	'Invalid time$'
+L1714:	
+	DB	0DH,0AH,'Enter new time: $'
+L1727:	
+	DB	'SunMonTueWedThuFriSat'
+
+
+mes_no:	DB	13,27,'K$'
+mes_yes:DB	8,' $'
+mes_all:DB	8,'& Rest$'
+
+L173C: 	DB	'COM'
+L173F: 	DB	'BAT'
+
+WORK:	DB	4,112,15,39,2,54,7,021h
+
+ESC	EQU	27
+
+L1742: 	DB	ESC,'y4',0
+L1746: 	DB	ESC,'x5',0
+L174A: 	DB	ESC,'A',0,0
+
+SLEN	EQU	$ - BATFIL
+
+BSA 	EQU	0F39Ah
+
+FLG:	DB	1
+WORK1:	DS	8
+DAT:	DS	1
+CONF:	DB	1
+FL_ONE:	DB	0
+FL_01:	DB	0
+FCB_2:	DS	32
+	DS	60
+
+L174E: 	ADD	A,B
+L174F:	NOP
+L1750: 	DS	4
+L1754: 	DS      32
+	DS      32
+	DS      32
+	DS      16
+	DS      10
+
+L17CE: 	NOP
+L17CF: 	NOP
+	DEC	C
+L17D1: 	INC	C
+L17D2: 	NOP
+L17D3: 	NOP
+	NOP
+L17D5: 	NOP
+L17D6: 	NOP
+	NOP
+L17D8: 	NOP
+	NOP
+L17DA: 	NOP
+L17DB: 	NOP
+L17DC:  NOP
+L17DD: 	NOP
+L17DE: 	NOP
+	DEC	C
+L17E0: 	NOP
+	NOP
+L17E2: 	NOP
+L17E3: 	NOP
+L17E4: 	NOP
+L17E5: 	NOP
+L17E6: 	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L17EE: 	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+
+
+L180A:	NOP	;0	Drive
+L180B:	NOP	;1	Name
+	NOP	;2
+	NOP	;3
+	NOP	;4
+	NOP	;5
+	NOP	;6
+	NOP	;7
+	NOP	;8
+L1813:	NOP	;9	Ext
+	NOP	;10
+	NOP	;11
+L1816:	NOP	;12	Current block
+L1817:	NOP	;13
+L1818:	NOP	;14	
+	NOP	;15
+L181A:	NOP	;16
+	NOP	;17
+L181C:	NOP	;18
+	NOP	;19
+L181E:	NOP	;20	Time
+	NOP	;21
+	NOP	;22
+L1821:	NOP	;23
+	NOP	;24
+L1823:	NOP	;25
+	NOP	;26
+	NOP	;27
+	NOP	;28
+L1827:	NOP	;29
+	NOP	;30
+L1829:	NOP	;31
+	NOP	;32
+
+L182B:	
+	NOP
+	NOP
+L182D:	
+	NOP
+	NOP
+L182F:	
+	NOP
+L1830:	
+	NOP
+L1831:	
+	NOP
+L1832:	
+	NOP
+L1833:	
+	NOP
+L1834:	
+	NOP
+L1835:	
+	NOP
+L1836:	
+	NOP
+	NOP
+L1838:	
+	NOP
+L1839:	
+	NOP
+L183A:	
+	NOP
+	NOP
+L183C:	
+	NOP
+	NOP
+L183E:	
+	NOP
+L183F:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L184A:	
+	NOP
+	NOP
+L184C:	
+	NOP
+	NOP
+L184E:	
+	NOP
+L184F:	
+	NOP
+L1850:	
+	NOP
+L1851:	
+	NOP
+L1852:	
+	NOP
+L1853:	
+	NOP
+L1854:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L18CE:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L1931:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L19CD:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L19D3:
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+L19DB:	
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+
+ROUND	EQU	256
+
+FINI	EQU	$ - 1
+
+BUSY	EQU	FINI - START
+
+	DEFS	( ( BUSY + ROUND - 1 ) / ROUND * ROUND ) - BUSY - 1
+
+;
+;
+;
+;
+;
+ENDING	EQU	$ - 1
+;
+;
+;
+;
+;
+
+L1A00	EQU	$		;1A00h
+L1A13	EQU	$ + 13h		;1A13h
+L1A15	EQU	$ + 15h		;1A15h
+L1A17	EQU	$ + 17h		;1A17h
+L1A19	EQU	$ + 19h		;1A19h
+L1A1A	EQU	$ + 1Ah		;1A1Ah
+L1A1B	EQU	$ + 1Bh		;1A1Bh
+L1A2F	EQU	$ + 2Fh		;1A2Fh
+L1A3D	EQU	$ + 3Dh		;1A3Dh
+L1A50	EQU	$ + 50h		;1A50h
+L1A52	EQU	$ + 52h		;1A52h
+L1A54	EQU	$ + 54h		;1A54h
+L1A58	EQU	$ + 58h		;1A58h
+L1AA8	EQU	$ + 0A8h	;1AA8h
+
+	END
+
+
+
+

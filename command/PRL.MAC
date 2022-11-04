@@ -1,0 +1,147 @@
+ 	.z80
+;
+; Relocating loader for PRL-code
+;
+; (C) 1987 by Kim Rado
+;
+
+LF		EQU	0Ah	; Line Feed
+CR		EQU	0Dh	; Cariage Return
+DLM		EQU	"$"
+
+ROUND		EQU	128
+
+HIMEM		EQU	0F34Bh	; Pointer to high memory address
+PUTCH		EQU	5454h
+SPTOP		EQU	9000h
+MEMTOP		EQU	0F1C9h	; Memory top
+
+MODE		EQU	0F340h	; System mode
+
+START		EQU	$
+
+ENTRY:
+	CALL	COPY
+	LD	A,(07)
+	LD	H,A	
+	LD	L,0
+	PUSH	HL
+	LD	HL,(CSEG_L)
+	LD	DE,(DSEG_L)
+	ADD	HL,DE
+	XOR	A
+	EX	DE,HL
+	POP	HL
+	SBC	HL,DE
+	LD	L,A
+	PUSH	HL
+	EX	DE,HL
+	LD	HL,STRT_PRL
+	LD	BC,(CSEG_L)
+	LDIR	
+	POP	DE
+	PUSH	DE
+	POP	IX
+	LD	BC,(CSEG_L)
+CUR:
+	LD	A,8
+	PUSH	AF
+REL:
+	POP	AF
+	DEC	A
+	PUSH	AF
+	JP	M,NEXT
+	XOR	A
+	RL	(HL)
+	JR	NC,NREL
+
+; Relocation
+	LD	A,(IX+0)
+	ADD	A,D
+	LD	(IX+0),A
+
+NREL:
+	INC	IX
+	DEC	BC
+	LD	A,B
+	OR	C
+	JR	Z,JUMP
+	JR	REL
+;
+NEXT:
+	POP	AF
+	INC	HL
+	JR	CUR
+;
+JUMP:
+	POP	AF
+	EX	DE,HL
+	JP	(HL)
+
+COPY:
+	LD	HL,03000h	
+
+	RST	030h
+	DB	0
+	DW	053h
+
+	LD	HL,DATA
+	LD	DE,80*24
+LBL02:
+	LD	A,(HL)
+	OUT	(098h),A
+	INC	HL
+	DEC	DE
+	LD	A,D
+	OR	E
+	RET	Z
+	JR	LBL02
+
+
+
+
+
+DATA:
+	DB	'¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾'
+	DB	'                                 COMMAND v1.21                                  '
+	DB	'  DIR [/p][/w] [filename]                                                       '
+	DB	'  COPY [/f][/v] filename [/b/a][+..+filename[/b/a] [filename]                   '
+	DB	'  TYPE [/f/p] filename                                                          '
+	DB	'  REN filename filename                                                         '
+	DB	'  DEL [/f] filename                                                             '
+	DB	'  PRINT [/f] filename                                                           '
+	DB	'  FREE [drive:]                                                                 '
+	DB	'  PAUSE                                                                         '
+	DB	'  REM [ any text ]                                                              '
+	DB	'  VERIFY [ON/OFF]                                                               '
+	DB	'  MODE n                                                                        '
+	DB	'  CLS                             COLOR n k                                     '
+	DB	'  TIME [current time]             HELP                                          '
+	DB	'  DATE [current time]             BOOT [drive:]                                 '
+	DB	'  BASIC [filename]                                                              '
+	DB	'  FORMAT                                                                        '
+	DB	'  KEY [ON/OFF/n[:]text]                                                         '
+	DB	'  SET                                                                           '
+	DB	'  DISK n k                                                                      '
+	DB	'  LOAD                                                                          '
+	DB	'  SAVE                                                                          '
+	DB	'¾¾¾¾¾¾¾ (C) 1989 ¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾¾ by Ted Chary ¾¾¾¾¾¾¾¾'
+		
+
+;
+FINISH		EQU	$
+BUSY		EQU	FINISH - START
+
+		DEFS	( ( BUSY + ROUND - 1 ) / ROUND * ROUND ) - BUSY
+
+TOTAL		EQU	$ - START
+
+;
+FICTION		EQU	$+000
+CSEG_L		EQU	$+001
+DSEG_L		EQU	$+003
+STRT_PRL	EQU	$+256
+;
+	END
+
+
