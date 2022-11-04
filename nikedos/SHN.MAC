@@ -1,0 +1,134 @@
+
+ 	TITLE	SHND87
+	SUBTTL	(C) 1987 by Kim Rado & Ray Soft
+	.Z80
+	PAGE
+;
+
+.BIOS	MACRO	@Slot,@Addr
+	 RST	 30h
+	 DB	 @Slot
+	 DW	 @Addr
+	ENDM	.BIOS
+
+; Data Areas Definitions ( in system RAM )
+;
+
+LINL40		EQU	0F3AEh	; Line length in SCREEN 0
+.SPxio		EQU	0FA75h+128	;VOICQ
+TIMI		EQU	0FD9Fh
+savSP		EQU	0F304h		; Area for SP save
+
+		DSEG
+;
+; Palett table (GRB)
+;
+PALTBL:		DW	000h,112h,714h,711h,117h,327h,151h,627h
+		DW	171h,373h,661h,664h,411h,265h,555h,777h
+
+;FL:      	DB	0
+;FL1:		DB	0
+
+ 		CSEG
+
+OUTLIN::
+	PUSH	HL
+	PUSH	BC
+	PUSH	AF
+OLINE:
+	LD	A,(DE)
+	CP	'$'
+       	JR	Z,RET??
+	PUSH	DE
+      	LD	E,A
+	CALL	CHPUT
+	POP	DE
+	INC	DE
+	JR	OLINE
+RET??:
+	POP	AF
+	POP	BC
+	POP	HL
+	RET
+	
+CHPUT::
+	DI
+	LD	A,(0FFFFh)
+	CPL
+	PUSH	AF
+	IN      A,(0A8h)
+	PUSH	AF
+	LD	A,0AAh
+	LD	(0FFFFh),A
+	LD	A,0FCh
+	OUT	(0A8h),A
+	LD	A,E
+	CALL	0A2h
+RET?:
+	DI
+	POP	AF
+	OUT	(0A8h),A
+	POP	AF
+	LD	(0FFFFh),A
+	RET
+		
+.WRVDP:
+	.BIOS	0,047h
+	RET
+
+.sCOM:
+	LD	(LINL40),A
+	CALL	INIPAL
+	.bios	0,06Ch
+;	LD	A,26
+;	LD	(0F3B1h),A
+;	LD	C,9
+;	LD	B,88h
+;	CALL	.WRVDP
+	RET
+;
+.s1828::
+; Set 1828 mode ( screen 24 * 40 characters )
+;
+;
+	LD	A,40
+	CALL	.sCOM
+	EI
+	RET
+;
+.s1850::
+;
+; Set 1850 mode ( screen 24 * 80 characters )
+;
+;
+	LD	A,(0FAF8h)
+	OR	A
+	JR	Z,.s1828	
+	LD	A,80
+	CALL	.sCOM
+	EI
+	RET
+
+INIPAL:
+;
+; Initialise palett table
+;
+;
+	LD	HL,PALTBL
+	LD	E,16
+	LD	C,16
+	LD	B,0
+        CALL	.WRVDP
+?ip01:	LD	A,(HL)
+	INC	HL
+	OUT	(9Ah),A
+	LD	A,(HL)
+	OUT	(9Ah),A
+	INC	HL
+	DEC	E
+	JR	NZ,?ip01
+	RET
+
+	END
+
+

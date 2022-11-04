@@ -1,0 +1,527 @@
+;
+;
+; Jumps Handler
+; (C) 1987 by Kim Rado
+
+	TITLE	JHND87
+	SUBTTL	(C) 1987 by Kim Rado, IS&T, Langry.
+	.Z80
+	PAGE
+;---------------------
+CR	EQU	00Dh
+LF	EQU	00Ah
+
+@Small	EQU	0AF06h
+;---------------------
+WBOOT	EQU	00000h
+BDOS	EQU	00005h
+OUTDO	EQU	00018h
+KEYINT	EQU	00038h
+TPA	EQU	00100h		; Transit Program Area
+DMA	EQU	0F23Dh		; Dynamic Memory Area address
+savSP	EQU	0F304h		; Area for SP save
+retSWT	EQU	0F306h		; Return switch
+savDE	EQU	0F307h		; Area for DE save
+
+GRPCOL	EQU	0F3C9h
+GRPCGP	EQU	0F3CBh
+SCRMOD	EQU	0FCAFh
+
+H.CHGE	EQU	0FDC2h
+
+.SPxio	EQU	0FA75h+128	; VOICCQ !!!
+;-------------------------
+;
+ITEM	MACRO	@Byte,@Word
+	 DB	 @Byte
+	 DW	 @Word
+	ENDM	ITEM
+
+.BIOS	MACRO	@Slot,@Addr
+	 RST	 30h
+	 DB	 @Slot
+	 DW	 @Addr
+	ENDM	.BIOS
+
+	DSEG
+
+;	GLOBAL	Q.BDOS,Q.XIOS,.SPsys
+	GLOBAL	Q.BDOS,.SPsys
+
+; BDOS functions jump table
+
+J.BDOS:
+	ITEM	  1,WBOOT	; System restart		0
+	ITEM	  0,05445h	; Console input			1
+	ITEM	  0,053A7h	; Console output      		2
+	ITEM	  1,@EOF	; Additive Unit (AUX) input	3
+	ITEM	  1,@OK		; AUX output			4
+	ITEM	  1,LST		; Printer output		5
+	ITEM	  0,05454h	; Direct console I/O	   	6
+	ITEM	  0,05462h	; Input without check-up	7
+	ITEM	  0,0544Eh	; PUTCH;Output without check-up	8
+	ITEM	  0,0F1C9h	; Line output			9
+	ITEM	255,050E0h	; Line input			10
+	ITEM	  0,0543Ch	; Console status		11
+	ITEM	  1,GETVNO	; Get version number		12
+	ITEM	  0,0509Fh	; Normalisation			13
+	ITEM	  0,050D5h	; Select drive			14
+	ITEM	 32,04462h	; Open file			15
+	ITEM	 32,0456Fh	; Close file			16
+	ITEM	 15,04FB8h	; Search first entry		17
+	ITEM	 15,05006h	; Search next entry		18
+	ITEM	 32,0436Ch	; Erase file			19
+	ITEM	 33,04775h	; Get record sequential		20
+	ITEM	 33,0477Dh	; Put record sequential		21
+	ITEM	 32,0461Dh	; Create file			22
+	ITEM	 32,04392h	; Rename file			23
+	ITEM	  0,0504Eh	; Get drives allocation vector	24
+	ITEM	  0,050C4h	; Get current drive		25
+	ITEM	  0,05058h	; Set DMA address		26
+	ITEM	  0,0505Dh	; Get drive parameters          27
+	ITEM	  1,@FREE	;                               28
+	ITEM	  1,@FREE	;                               29
+	ITEM	  1,@FREE	;                               30
+	ITEM	  1,@FREE	;                               31
+	ITEM	  1,@FREE	;                               32
+	ITEM	 36,04788h	; Get record random             33
+	ITEM	 36,04793h	; Put record random             34
+	ITEM	 36,0501Eh	; Get file size                 35
+	ITEM	 36,050C8h	; Set position for random I/O   36
+	ITEM	  1,@FREE	;                               37
+	ITEM	 37,047BEh	; Write block direct            38
+	ITEM	 37,047B2h	; Read block direct             39
+	ITEM	 36,047D1h	; Put record random with zero fill 40
+	ITEM	  1,@FREE	;                               41
+	ITEM	  0,0553Ch	; Get current date              42
+	ITEM	  0,05552h	; Set date                      43
+	ITEM	  0,055DBh	; Get current time              44
+	ITEM	  0,055E6h	; Set time                      45
+	ITEM	  0,055FFh	; Set verify mode               46
+	ITEM	  0,046BAh	; Read sector                   47
+	ITEM	  0,04720h	; Write sector                  48
+	ITEM	  0,RDSEC	; Read sector direct            49
+	ITEM	  0,WRSEC	; Write sector direct           50
+Q.BDOS	EQU	($-J.BDOS)/3
+
+; BIOS functions jump table
+
+J.BIOS:
+	JP	.WBOOT		; Cold boot
+@WBOOT:	JP	.WBOOT		; Warm boot
+	JP	CONST		; Console status
+	JP	CONIN		; Console input
+	JP	CONOUT		; Console output
+	JP	LSTOUT		; Lineprinter output
+Q.BIOS	EQU	($-J.BIOS)/3
+
+CLIFCB:	DB	0,'COMMAND ','COM'
+	DS	37-($-CLIFCB)
+ERRmsg:	DB	CR,LF,'Cannot start CLI file'
+	DB	CR,LF,'Press any key for retry',CR,LF,'$'
+
+CFCB:	DB	1
+CFLG:	DB	0
+
+io.spd:	DB	0C9h
+SWTFLG:	DB	0
+savHL:	DW	0
+;SPsav:		DW	TPA
+;SPnew0:	DW	TPA
+;SPnew1:	DW	TPA-14
+?wkspc:	DS	256
+	DS	128		; System Stack area
+.SPsys	EQU	$
+
+
+TBL:
+	DS	256
+	
+	CSEG
+
+.BDOS::
+	EI
+	LD	A,1
+	LD	(retSWT),A
+	LD	A,C
+	CP	Q.BDOS
+	JP	NC,.XIOS
+	CP	05h
+	JP	Z,LST
+	LD	(savSP),SP
+	LD	SP,.SPsys
+	CP	11h		; Search first
+	JR	NZ,?1
+	LD	(savDE),DE
+?1:	CP	12h		; Search next
+	JR	NZ,?2
+	LD	DE,(savDE)
+?2:	PUSH	HL
+	LD	HL,EXIT
+	EX	(SP),HL
+	PUSH	HL
+	LD	HL,J.BDOS
+	LD	B,0
+	ADD	HL,BC
+	ADD	HL,BC
+	ADD	HL,BC
+	LD	A,(HL)
+	INC	HL
+	LD	B,(HL)
+	INC	HL
+	LD	H,(HL)
+	LD	L,B
+	LD	(SWTFLG),A
+	OR	A
+	JR	Z,?4
+	CP	1
+	JR	Z,?5
+	PUSH	HL
+	EX	DE,HL
+	LD	(savHL),HL
+	LD	DE,?wkspc
+	LD	B,0
+	LD	C,A
+	INC	A
+	JR	NZ,?3
+	LD	C,(HL)
+	INC	BC
+	INC	BC
+?3:	LDIR
+	POP	HL
+	LD	DE,?wkspc
+?4:	CALL	0F368h
+	EI
+?5:	EX	(SP),HL
+	RET
+
+EXIT:
+	PUSH	AF
+	LD	A,(SWTFLG)
+	CP	1
+	JR	Z,?7
+	CALL	0F36Bh
+;	PUSH	AF
+;	LD	A,(io.spd)
+;	LD	(KEYINT),A
+;	POP	AF
+	EI
+	OR	A
+	JR	Z,?7
+	LD	C,A
+	LD	B,0
+	PUSH	HL
+	LD	DE,(savHL)
+	LD	HL,?wkspc
+	INC	A
+	JR	NZ,?6
+	LD	A,(DE)
+	LD	C,A
+	INC	BC
+	INC	BC
+?6:	LDIR
+	POP	HL
+?7:	LD	A,(retSWT)
+	OR	A
+	JR	Z,?9
+	POP	AF
+	LD	L,A
+	LD	H,B
+	LD	SP,(savSP)
+	RET
+?9:	POP	AF
+	LD	SP,(savSP)
+	RET
+;
+.WBOOT::
+	LD	SP,.SPsys
+	CALL	0F368h
+	EI
+	LD	HL,@WBOOT
+	LD	(WBOOT+1),HL	; Warm Boot
+	LD	HL,@BDOS##
+	LD	(BDOS+1),HL	; BDOS call
+	LD	HL,CHPUT##
+	LD	(OUTDO+1),HL	; Output character to CON:
+	LD	A,0C3h		; The 'JP' instruction code
+	LD	(WBOOT),A
+	LD	(BDOS),A
+	LD	(OUTDO),A
+?wboot:
+	CALL	050A9h		; Flush FAT's, if not done ...
+	LD	HL,(CHKBGN##)
+	LD	BC,(CHKSIZ##)	; In words
+	LD	DE,0
+?10:	LD	A,(HL)
+	INC	HL
+	ADD	A,E
+	LD	E,A
+	LD	A,(HL)
+	INC	HL
+	ADC	A,D
+	LD	D,A
+	DEC	BC
+	LD	A,C
+	OR	B
+	JR	NZ,?10
+	LD	HL,(CHKSUM##)
+	SBC	HL,DE
+	JR	NZ,OPNCLI	; Open & Run CLI file
+	LD	HL,(CHKBGN##)
+	CALL	0F36Bh
+	EI
+	JP	(HL)
+
+OPNCLI:
+	XOR	A
+	LD	(CFLG),A
+	LD	A,(CFCB)
+	LD	(CLIFCB),A
+TWO:
+	LD	DE,CLIFCB
+	CALL	04462h		; Open file
+	OR	A
+	JR	Z,RUNCLI
+	LD	A,(CLIFCB)
+	OR	A
+	JR	Z,THR
+	LD	A,(CFLG)
+	OR	A
+	JR	NZ,OPNERR
+	LD	(CLIFCB),A
+	JR	TWO
+THR:
+	LD	A,(CFCB)
+	CP	1
+	JR	Z,OPNERR
+	LD	A,1
+	LD	(CFLG),A
+	LD	(CLIFCB),A
+	JR      TWO
+	
+OPNERR:	
+       	LD	DE,ERRmsg
+	CALL	OUTLIN##
+	CALL	05462h		; Waiting for pressing
+	JR	OPNCLI
+RUNCLI:	LD	HL,0
+	LD	(CLIFCB+33),HL
+	LD	(CLIFCB+35),HL
+	INC	HL
+	LD	(CLIFCB+14),HL
+	LD	HL,TPA
+	LD	(DMA),HL
+	LD	DE,CLIFCB
+	LD	HL,@BDOS##
+	DEC	H		; Subtract 0100h
+	CALL	047B2h		; Read direct
+	LD	A,L
+	OR	H
+	JR	Z,OPNERR	; Read fault (or zero length)
+	CALL	0F36Bh
+	EI
+	LD	SP,@BDOS##
+	JP	TPA
+;
+.XIOS::
+	CP	255
+	JR	NZ,@FREE
+	JP	Xmode
+
+@FREE:
+@OK:
+	XOR	A
+	LD	B,A
+	RET
+@EOF:
+	LD	A,1Ah
+	RET
+
+@ERR:
+	LD	A,0FFh
+	LD	L,A
+	RET
+
+CONOUT:
+	DI
+	PUSH	BC
+	LD	A,(0FCAFh)
+	CP	2
+	JR	C,PRO
+	.BIOS	0,06Ch
+PRO:
+	POP	DE
+	LD	(savSP),SP
+	LD	SP,.SPsys
+	CALL	CHPUT##
+	LD	SP,(savSP)
+	RET
+	
+CONIN:
+	LD	(savSP),SP
+	LD	SP,.SPsys
+	CALL	0F368h
+	EI
+	CALL	05462h
+	CALL	0F36Bh
+	EI
+	LD	SP,(savSP)
+	RET
+
+CONST:
+	LD	(savSP),SP
+	LD	SP,.SPsys
+	CALL	0F368h
+	EI
+	CALL	04034h
+	PUSH	AF
+	CALL	0F36Bh
+	EI
+	POP	AF
+	LD	SP,(savSP)
+	LD	A,0
+	RET	Z
+	DEC	A
+	RET
+
+LSTOUT:
+	LD	E,C
+LST:
+	LD	(savSP),SP
+	LD	SP,.SPsys
+	CALL	0F368h
+	EI
+	CALL	05465h
+	CALL	0F36Bh
+	EI
+	LD	SP,(savSP)
+	RET
+
+CALC:
+	PUSH	BC
+	PUSH	HL
+	LD	B,0
+	LD	C,A
+	LD	HL,TBL
+        ADD	HL,BC
+	LD	A,(HL)
+	POP	HL
+	POP	BC
+	RET
+
+LST_INIT::
+	CALL	TBLLST
+	LD	A,0C3h
+	LD	(0FFB6h),A
+	LD	HL,CALC
+	LD	(0FFB7h),HL
+	RET
+
+TBLLST::
+	DI
+	LD	B,255
+	LD	HL,TBL+255
+L1111:	LD	(HL),B
+	DEC	HL
+	DJNZ	L1111
+	EI
+	LD	(0FCA4h),HL
+	RET
+
+GETVNO:
+	XOR	A
+	LD	(retSWT),A
+	LD	HL,0345h	; Version of NIKE
+	LD	A,027h
+	RET
+
+RDSEC:
+; H -- quantity,
+; L -- drive,
+; DE -- number,
+;
+	XOR	A
+	LD	(retSWT),A
+	LD	B,H
+	LD	C,0F9h
+       	LD	A,L
+	LD	HL,(DMA)
+	OR	A
+	CALL	04010h
+	RET
+
+WRSEC:
+	XOR	A
+	LD	(retSWT),A
+	LD	B,H
+	LD	C,0F9h
+	LD	A,L
+	LD	HL,(DMA)
+	SCF
+	CALL	04010h
+	RET
+;
+Xmode:
+	LD	A,B
+	CP	255
+	JP	Z,SETCOM##
+	CP	254
+	JR	Z,SETBOOT
+	OR	A    		;a   width 80
+	JP	Z,.s1850##
+	DEC	A       	;b   width 40
+	JP	Z,.s1828##
+	DEC	A    		;c   High speed I/O
+	JR	Z,.sFST
+	DEC	A    		;d   Standart speed I/O
+	JR	Z,.sSLW
+;   	DEC	A		;e      	
+;	DEC	A		;f    	
+;	DEC	A		;g
+;	CP	6               ;h,i,j,k,l
+;	JR	NC,LOOP08	
+;	JP	SETRAM##
+;LOOP08:	SUB	6
+	DEC	A		;e
+	JP	Z,TBLLST
+;       DEC	A      		;n
+;	JP	Z,RAV
+	RET
+
+SETBOOT:
+	LD	A,(0F347h)
+	INC	A
+	CP	E
+	RET	C
+	LD	A,E
+	LD	(CFCB),A
+	RET
+
+;nete:
+;	LD	A,0AEh
+;	LD	(0FFFFh),A
+;	LD	A,(04000h)
+;	CP	041h
+;	JR	NZ,ENnet
+;	RST	30
+;	DB	08Fh
+;	DW	04016h
+;ENnet:	LD	A,0AAh
+;	LD	(0FFFFh),A
+;	RET
+	
+.sSLW::
+	LD	A,0C3h
+	LD	(io.spd),A
+	LD	(KEYINT),A
+	RET
+
+.sFST::
+	LD	A,0C9h
+	LD	(io.spd),A
+	LD	(KEYINT),A
+	RET
+
+	END
+
+

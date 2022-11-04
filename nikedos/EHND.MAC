@@ -1,0 +1,166 @@
+;
+;
+; Errors Handler
+; (C) 1987 by Kim Rado
+;
+;
+;
+;
+	TITLE	EHND87
+	SUBTTL	(C) 1987 by Kim Rado, IS&T, Langry.
+	.Z80
+	PAGE
+;
+;
+CR     	EQU	0Dh
+LF     	EQU	0Ah
+ESC	EQU	1Bh
+UC	EQU	1Eh	
+;
+WBOOT  	EQU	00000h
+GETCH  	EQU	05454h
+;
+
+       	DSEG
+
+.ERR0: 	DB	CR,LF,'Drive '
+.ERR1: 	DB	'A ('
+.ERR2: 	DB	'?) : ','$'
+ERR00: 	DB	'Write protect','$'
+ERR01: 	DB	'Not ready','$'
+ERR02: 	DB	'Data (CRC) error','$'
+ERR03: 	DB	'Seek error','$'
+ERR04: 	DB	'Record not found','$'
+ERR05: 	DB	'Write fault','$'
+ERR06: 	DB	'Disk error','$'
+ERR07: 	DB	'Bad parameter','$'
+ERR08: 	DB	'Out of memory','$'
+ERRxx: 	DB	'Undefined error','$'
+ERRft: 	DB	'Bad FAT','$'
+RQST:  	DB	CR,LF,'Abort, Retry, Ignore ? ','$'
+BATRQ: 	DB	CR,LF,'Terminate BATCH file ? ','$'
+.YES:  	DB	'Yes',CR,LF,'$'
+.NO:   	DB	'No',CR,LF,'$'
+EFF:	DB	CR,ESC,'K',UC,ESC,'K',UC,'$' 
+
+ERRTBL:
+       	DW	ERR00
+       	DW	ERR01
+       	DW	ERR02
+       	DW	ERR03
+       	DW	ERR04
+       	DW	ERR05
+       	DW	ERR06
+       	DW	ERR07
+       	DW	ERR08
+.ERRC	EQU	( $ - ERRTBL ) / 2
+
+.CTRL:	DB	'^C$'
+
+       	CSEG
+
+EHNDLR::
+	ADD	A,'A'		; Store drive name
+	LD	(.ERR1),A
+	LD	A,C
+	SRL	A
+	PUSH	AF
+	LD	A,'R'
+	JR	NC,?01
+	LD	A,'W'
+?01:	LD	(.ERR2),A	; Store operation type ( READ/WRITE )
+	BIT	7,C
+	JR	NZ,?fterr	; Jump, if it is fatal error
+	LD	DE,.ERR0	; Output common part
+	CALL	OUTLIN##
+	POP	AF		; Restore error code
+	LD	DE,ERRxx
+	CP	.ERRC		; It's error message is available ?
+	JR	NC,?02		; No ! Output "Undefined error"
+	ADD	A,A
+	LD	E,A
+	LD	D,0
+	LD	HL,ERRTBL
+	ADD	HL,DE
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+?02:	CALL	OUTLIN##	; Output error message
+	LD	DE,RQST		; Output request line
+	CALL	OUTLIN##
+?03:
+	CALL	CHGET		; Get character from keyboard
+	AND	5Fh+128		; Convert to upper case
+	LD	C,0
+	CP	'I'		; Ignore ?
+	JR	Z,?04		; Yes !
+	INC	C
+	CP	'R'		; Retry ?
+	JR	Z,?04		; Yes !
+	INC	C
+	CP	'A'		; Abort ?
+	JR	Z,?04		; Yes !
+	CP	3		; ^C ?
+	JR	Z,BREAK		; No, retry again.
+	JR	?03
+?04:
+	LD	DE,EFF
+	XOR	A
+	CALL	OUTLIN##	; Output prompt
+	RET			; Return to FCS
+;
+;
+; If it's fatal error
+;
+?fterr:
+	POP	AF
+	LD	DE,ERRft
+	LD	C,2		; Abort, it's fatal error !
+	JR	?04
+;
+;
+;
+CHGET::
+	PUSH	HL
+	PUSH	DE
+	PUSH	BC
+	CALL	0F368h
+?05:	LD	E,255
+	CALL	GETCH
+	JR	Z,?05
+	CALL	0F36Bh
+	POP	BC
+	POP	DE
+	POP	HL
+	RET
+;
+BREAK:		
+	;Entry from EHNDLR
+BHNDLR::
+	LD	SP,.SPsys##
+	LD	DE,.CTRL
+	CALL	OUTLIN##
+	LD	A,(BATFLG##)
+	OR	A
+	JR	Z,?08
+	LD	DE,BATRQ
+	CALL	OUTLIN##
+	LD	DE,.NO
+?06:	CALL	CHGET
+	AND	5Fh+128
+	CP	'N'
+	JR	Z,?07
+	CP	'Y'
+	JR	NZ,?06
+	XOR	A
+	LD	(BATFLG##),A
+	LD	DE,.YES
+?07:	CALL	OUTLIN##
+?08:
+	EI
+	JP	WBOOT
+
+
+	END
+
+

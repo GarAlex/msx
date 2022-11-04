@@ -1,0 +1,340 @@
+       	.z80
+
+LF267	EQU	0F267H
+LF268	EQU	0F268H
+LF270	EQU	0F270H
+LF271	EQU	0F271H
+LF279	EQU	0F279H
+LF27A	EQU	0F27AH
+LF2E1	EQU	0F2E1H
+LF347	EQU	0F347H
+LF355	EQU	0F355H
+
+x01	EQU	0FB21H
+LFFFF	EQU	0FFFFH
+
+
+INIRAM::
+	LD	DE,4
+
+SETCOM::
+	LD   	A,(0FAF8h)
+	OR	A
+        RET	Z
+	LD	A,(0F347h)
+	DEC	A
+	LD	B,A
+	LD	A,(0F246h)
+	CP	B
+	JR	NZ,TRSET
+	LD	HL,(0F351h)
+	LD	(HL),0
+
+TRSET:
+	LD	A,0AAh
+	LD	(0FFFFh),A
+	LD	A,4
+	OUT	(0FDh),A
+	LD	A,7
+	RST	30h
+	DB	0
+	DW	0141h
+	AND	40h
+	LD	(CHK),A
+	JR	NZ,ORT
+	LD	DE,(04000h)
+ORT:
+	LD	(04000h),DE
+	LD	A,2
+	OUT	(0FDh),A
+;	LD	A,D
+;	OR	E
+;	RET	Z
+	LD	A,E
+	LD	(RAM),A
+	LD	A,8
+	SUB	D
+	LD	(VRAM),A
+	LD	A,D
+	ADD	A,E
+	CP	0BH
+	JR	Z,KT
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	DEC	A
+	JR	KR
+KT:	LD	A,0A9h
+KR:	LD	(L03A9),A
+	LD	HL,L03B0
+	LD	(LF268),HL
+	LD	HL,L03BE
+	LD	(LF271),HL
+	LD	HL,L03C1
+	LD	(LF27A),HL
+	LD	A,0C3H
+	LD	(LF267),A
+	LD	(LF270),A
+	LD	(LF279),A
+	LD	HL,LF347
+        LD	A,(0F35Bh)
+	OR	A
+	JR	Z,TR
+	DEC	(HL)
+TR:   	LD	A,(HL)
+	LD	(L039B),A
+	INC	(HL)
+	LD	DE,LF355
+	LD	H,0
+	LD	L,A
+	ADD	HL,HL
+	ADD	HL,DE
+	LD	DE,L039B
+	LD	(HL),E
+	INC	HL
+	LD	(HL),D
+        LD	A,(0F35Bh)
+	OR	A
+	JR	NZ,TRO
+	LD	HL,x01
+	LD	B,(HL)
+	XOR	A
+L0326:	
+	INC	HL
+	CP	(HL)
+	JR	NZ,L0326
+	LD	(HL),B
+TRO:
+	LD	A,(CHK)
+	OR	A
+       	JR	NZ,NOF2
+FORINI:
+	LD	B,1
+	LD	DE,0001h
+	LD	HL,TRTR
+	CALL	L??
+	JR	F2
+NOF2:
+	LD	BC,0700h
+	LD	HL,0100h
+	CALL	L0355
+	LD	B,7
+	LD	DE,0002h
+	LD	HL,0100h
+	CALL	L0370
+	LD	HL,FTFT
+	LD	BC,0FDh
+	CALL	L0355
+	LD	B,1
+	LD	DE,0001h
+	LD	HL,TRTR
+	CALL	L0370
+F2:
+	LD	A,1
+	LD	(0F35Bh),A
+	RET
+
+L0355:	
+	LD	(HL),0
+	INC	HL
+	DEC	BC
+	LD	A,B
+	OR	C
+	JR	NZ,L0355
+	RET
+L0370:	
+;		B - Сколько
+;		HL - откуда
+;		DE - #sector
+
+	LD	A,40h
+	CALL	L03CC
+	RET
+L??:
+	XOR	A
+	CALL	L03CC
+	RET
+
+L039B:	
+	DEFB	00h             ;Drive number
+	DEFB	0F9h		;Media ID byte
+	DEFW	0100h           ;Sector size
+	DEFB	07h             ;Directory mask
+	DEFB	03h		;Directory shift
+	DEFB	03h             ;Claster mask
+	DEFB	03h             ;Claster shift
+	DEFW	0001h           ;First FAT sector
+	DEFB	01h             ;# of FAT's
+	DEFB	38h		;# of directory entries
+	DEFW	0009h           ;First data sector
+L03A9:	DEFB	0A9h	 	;# of cluster + 1
+	DEFB	00h
+	DEFB	01h             ;# of sector per FAT
+	DEFW	0002h		;First directory sector
+	DEFW	TRTR		;point FAT's 
+
+L03B0:	
+	LD	A,(LF2E1)
+	LD	HL,L039B
+	CP	(HL)
+	RET	NZ
+ 	POP	AF
+	LD	IX,L039B
+	RET
+;	JR	FORINI
+
+CAPS:
+	PUSH	AF
+	IN	A,(0AAh)
+	PUSH	AF
+	AND	40h
+ 	JR	Z,N
+	POP	AF 		;on
+	AND	0BFh
+	OUT	(0AAh),A
+	JR	K
+N:	POP	AF		;off
+	OR	040h
+	OUT	(0AAh),A
+K:	POP	AF
+	RET	
+	
+L03BE:	
+	XOR	A
+	JR	L03C3
+L03C1:	
+	LD	A,40h
+L03C3:	
+	LD	C,A
+	LD	A,(L039B)
+	CP	(IX+00H)
+	LD	A,C
+	RET	NZ
+L03CC:	
+	DI
+	EX	AF,AF'
+	IN	A,(0A8h)
+	PUSH	AF
+	OR	0CH
+	OUT	(0A8H),A
+	LD	A,(LFFFF)
+	CPL
+	PUSH	AF
+	LD	A,0AAh
+	LD	(LFFFF),A
+	EX	AF,AF'
+	CALL	CAPS
+L03F2:	
+	PUSH	AF
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	LD	B,A
+	LD	A,E
+	RR	D
+	RRA
+	RR	D
+	RRA
+	RRCA
+	RRCA
+	RRCA
+	RRCA
+	AND	0FH
+RAM	EQU	$+1
+	SUB	4
+	JR	C,L0455
+VRAM	EQU	$+1
+	ADD	A,1
+	OUT	(99H),A
+	LD	A,8EH
+	OUT	(99H),A
+	EX	(SP),HL
+	EX	(SP),HL
+	XOR	A
+	OUT	(99H),A
+	LD	A,E
+	AND	'?'
+	OR	B
+	OUT	(99H),A
+	EX	(SP),HL
+	EX	(SP),HL
+	BIT	6,B
+	LD	BC,0FF98h
+	JR	Z,L042C
+	OTIR
+	NOP
+	NOP
+	OUTI
+	JR	L0432
+L042C:	
+	INIR
+	NOP
+	NOP
+	INI
+L0432:	
+	POP	HL
+	LD	DE,0100h
+	ADD	HL,DE
+	POP	DE
+	INC	DE
+	POP	BC
+	POP	AF
+	DJNZ	L03F2
+	XOR	A
+	OUT	(99H),A
+	LD	A,8EH
+	OUT	(99H),A
+	CALL	CAPS
+	POP	AF
+	LD	(LFFFF),A
+	POP	AF
+	OUT	(0A8H),A
+	EI
+	POP	AF
+	XOR	A
+	RET
+L0455:	
+	LD	D,A
+	BIT	6,B
+	EX	AF,AF'
+	LD	BC,080FEh
+	LD	A,H
+	CP	40h
+	JR	C,L0464
+	LD	BC,0FCh
+L0464:	
+	IN	A,(C)
+	PUSH	AF
+	OUT	(C),D
+	LD	A,E
+	AND	3Fh
+	ADD	A,B
+	LD	D,A
+	LD	E,0
+	PUSH	BC
+	EX	AF,AF'
+	JR	NZ,L0475
+	EX	DE,HL
+L0475:	
+	LD	BC,0100h
+	LDIR
+	POP	BC
+	POP	AF
+	OUT	(C),A
+	JR	L0432
+
+	DSEG
+
+CHK:	DB	0
+	DB	0
+
+TRTR:
+	DEFB	0F9h
+	DEFW	0FFFFh
+
+FTFT	EQU	$
+      	DEFS	0FDh,00
+
+	END        
+
