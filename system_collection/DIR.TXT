@@ -1,0 +1,83 @@
+msxdos.1 :
+ Nike-DOS version 2.6/1M(3M)
+ len = 6016
+ -1
+msxdos.2 :
+ Nike-DOS version 3.44
+ len = 4224
+ -2
+ -3
+msxdos.3 :
+ MSXDOS version 1.03 ( родной для MSX2 )
+ len = 2432
+ -4
+ -6
+msxdos.4 :
+ Nike-DOS version 3.46
+ len = 4860
+ -2
+ -3
+msxdos.5 :
+ MSXDOS verison 3.00 ( подкаталоги ) ;
+ len = 5376
+ -5
+msxdos.6 :
+ Kiev-DOS v4.01 1990
+ len = 4243
+ -8
+msxdos.7 :
+ MSX-DOS version 1.26 ( galutin's )
+ len = 5120
+ -1
+ -6
+ -9
+--------------------------------------------------------
+command.1 :
+ version 2.1M (c) 1986, 1987 STS co.
+ len = 7296
+ -1
+command.2 :
+ 1.21 ( с HELP, DATE, TIME )
+ len = 9600
+ -2
+ -4
+command.3 :
+ мой
+ len = 8192
+ -2
+ -4
+command.4 :
+ version 1.11 ( родной для MSX2 )
+ len = 6656
+ -3
+command.5 :
+ version 3.00 ( для доса с подкаталогами ) 
+ len = 6656
+ -5
+command.6 :
+ version 2.0 (c) 1986 STS co.
+ len = 6784
+ -3
+command.7 :
+ version 2.0 декабрь 1988, (C) МГУ, мехмат, ЛВМ
+ len = 6784
+ -3
+command.8 :
+ version 2.07 with 0 sector data
+ len = 7168
+ -6
+command.9 :
+ vesion 2.0M (c) 1986 STS co.
+ len = 7040
+ -7
+command.10 :
+ version 2.0 декабрь 1988, (C) МГУ, мехмат, ЛВМ
+ меняет регистр
+ len = 6784
+ -3
+command.11 :
+ version 2.05 with 0 sector data
+ len = 7168
+ -3
+ -6
+
